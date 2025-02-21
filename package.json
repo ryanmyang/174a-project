@@ -1,0 +1,16 @@
+{
+  "name": "threejs-squid-bridge",
+  "version": "1.0.0",
+  "description": "Three.js Squid Game Glass Bridge Challenge with Vite",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "type": "module",
+  "dependencies": {
+    "three": "^0.152.0"
+  },
+  "devDependencies": {
+    "vite": "^4.0.0"
+  }
+}
