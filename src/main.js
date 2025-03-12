@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 
@@ -66,9 +67,67 @@ startPlatform.receiveShadow = true;
 scene.add(startPlatform);
 
 const endPlatform = new THREE.Mesh(platformGeom, platformMat);
-endPlatform.position.set(0, 0, -(panelCount) * 3 - 4);
+let endPos = new THREE.Vector3(0, 0, -(panelCount) * 3 - 4);
+endPlatform.position.copy(endPos);
 endPlatform.receiveShadow = true;
 scene.add(endPlatform);
+
+///////////////////////////////// DOLL
+
+let isRedLight = false;
+let dollRotationComplete = false;
+let dollTargetRotation = Math.PI;
+let lightSwitchTimer = 0;
+let nextLightSwitch = Math.random() * 5 + 3;
+
+// Load doll
+const loader = new OBJLoader();
+let doll;
+loader.load('assets/doll.obj', function (object) {
+    doll = object;
+    doll.position.copy(endPos);
+    doll.scale.set(10, 10, 10);
+    doll.rotation.y = dollTargetRotation;
+
+    // DOLL EYE LIGHTS
+    const eyeLight = new THREE.PointLight(0xff0000, 0, 3);
+    eyeLight.position.set(0, 2, 0);
+    doll.add(eyeLight);
+
+    scene.add(doll);
+});
+
+
+
+
+// PROJECTILES
+let bullets = [];
+const minFireWait = 0.1;
+const bulletSpeed = 1.5;
+let lastShotTime = -minFireWait;
+function shootProjectile() {
+  console.log("shoot!!")
+    const bullet = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    );
+    let spawnPos = doll.position.clone();
+    spawnPos.y += 5;
+    bullet.position.copy(spawnPos);
+
+    const predictionTime = 0.001;
+    let targetPos = player.position.clone();
+    // targetPos.y += playerHeight * 0.5;
+    const futurePosition = targetPos.add(playerVelocity.clone().multiplyScalar(predictionTime));
+    bullet.userData.velocity = new THREE.Vector3().subVectors(futurePosition, spawnPos).normalize().multiplyScalar(bulletSpeed);
+    scene.add(bullet);
+    bullets.push(bullet);
+}
+
+let moving = false;
+///////////////////////////////// DOLL
+
+
 
 function add2Lights(x, y, z){ //add 2 lights going backwards from the current position
   for (let i = 0; i < 2; i++){
@@ -174,6 +233,9 @@ let canJump = true;
 const moveSpeed = 5;
 const gravity = 9.8;
 let velocityY = 0;
+let previousPosition = new THREE.Vector3();
+let playerVelocity = new THREE.Vector3();
+
 
 // Controls
 document.addEventListener('keydown', (event) => {
@@ -268,12 +330,10 @@ function animate() {
   if (moveRight)    player.position.x += moveDistance;
 
   // connect the cam to the player (uncomment to stick camera unto player and not use orbit controls)
-  /*
   camera.position.x = player.position.x;
   camera.position.z = player.position.z + 5;
   camera.position.y = player.position.y + 3;
   camera.lookAt(player.position.x, player.position.y + 0.5, player.position.z); 
-  */
   // Gravity
   velocityY -= gravity * delta;
   player.position.y += velocityY * delta;
@@ -331,6 +391,67 @@ function animate() {
   // reset on death
   if (player.position.y < -5) {
     resetToStart();
+  }
+
+  ///////////////////// DOLL LOGIC
+
+  lightSwitchTimer += delta;
+
+  // RED LIGHT / GREEN LIGHT
+
+  // player moving?
+  // calc velocity
+  playerVelocity.subVectors(player.position, previousPosition).divideScalar(delta);
+  previousPosition.copy(player.position);
+  moving = playerVelocity.length() > 0.1
+
+
+
+  // doll rotate
+  dollTargetRotation = isRedLight ? 0 : Math.PI;
+  const rotationSpeed = 2 * delta;
+  doll.rotation.y += (dollTargetRotation - doll.rotation.y) * rotationSpeed;
+  if (Math.abs(doll.rotation.y - dollTargetRotation) < 0.05) {
+    //snap
+    doll.rotation.y = dollTargetRotation;
+  }
+
+  // can shoot
+  if (Math.abs(doll.rotation.y - dollTargetRotation) < 0.15){
+    dollRotationComplete = true;
+  } else {
+    dollRotationComplete = false;
+  }
+
+  // switch light
+  if (lightSwitchTimer > nextLightSwitch) {
+      isRedLight = !isRedLight;
+      nextLightSwitch = Math.random() * 5 + 3; // Reset next random switch time
+      lightSwitchTimer = 0;
+      // eyeLight.intensity = isRedLight ? 3 : 0;
+  }
+  console.log(`moving ${moving}, isRedLight ${isRedLight}, rotComplete ${dollRotationComplete}`)
+
+  // CHECK PLAYER MOVEMENT DURING RED LIGHT
+  if (isRedLight && moving && dollRotationComplete) {
+    shootProjectile();
+    // fire rate logic
+    // const currentTime = lightSwitchTimer;
+    // if (currentTime - lastShotTime >= minFireWait) {
+    //     shootProjectile();
+    //     lastShotTime = currentTime;
+    // }
+  }
+
+  // UPDATE BULLETS
+  for (let i = 0; i < bullets.length; i++) {
+      bullets[i].position.add(bullets[i].userData.velocity);
+      if (bullets[i].position.distanceTo(player.position) < 1) {
+          console.log("Player Hit! Resetting...");
+          player.position.set(0, 1, 0);
+          scene.remove(bullets[i]);
+          bullets.splice(i, 1);
+      }
   }
 
   renderer.render(scene, camera);
