@@ -563,7 +563,7 @@ function animate() {
   // SURFACE DETECTION PHYSICS
   raycaster.set(player.position.clone(), new THREE.Vector3(0, -1, 0));
   const intersects = raycaster.intersectObjects([
-    ...panels,
+    ...panelCollisions,
     startPlatformCollision,
     endPlatformCollision,
   ]);
