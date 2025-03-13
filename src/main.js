@@ -238,32 +238,36 @@ loader.load("assets/doll.obj", function (object) {
 
   scene.add(doll);
 });
+
 let player;
+let playerMixer;
+let idleAction;
 loader2.load(
-  "../assets/guard.gltf",
+  "../assets/neutral_idle.glb",
   (gltf) => {
     player = gltf.scene;
-    player.scale.set(0.15, 0.15, 0.15);
-    player.position.set(0, 0, 0);
-    player.castShadow = true;
-    // Create a new bounding box from the model
+    player.scale.set(1, 1, 1);
+    // Adjust player's position so the base sits at y = 0
     const box = new THREE.Box3().setFromObject(player);
     const bboxMin = box.min.y; // lowest Y value of the model
-    // Adjust player's position so the base sits at y = 0
     player.position.set(0, -bboxMin, 0);
-    // update the model's world matrix
-    player.updateWorldMatrix(true, true);
-    // Get the size of the bounding box
-    const size = box.getSize(new THREE.Vector3());
-    // The height of the model is the Y component of the size vector
-    console.log("Model Height:", size.y);
     scene.add(player);
+    // playerMixer = new THREE.AnimationMixer(player);
+    // idleAction = playerMixer.clipAction(gltf.animations[0]);
+    // idleAction.setLoop(THREE.LoopRepeat, Infinity);
+    // idleAction.clampWhenFinished = true;
+    // idleAction.play();
   },
   undefined,
   (error) => {
     console.error("Error loading the model:", error);
   }
 );
+
+// let jumping;
+// loader2.load("../assets/jump.glb", (gltf) => {
+//   jumping = gltf.animations[0]; //get jump animation
+// });
 
 // PROJECTILES
 let bullets = [];
@@ -422,15 +426,6 @@ scene.add(lrRail);
 scene.add(rlRail);
 scene.add(rrRail);
 
-// Make the player
-//const playerHeight = 1;
-//const playerGeom = new THREE.BoxGeometry(0.5, playerHeight, 0.5);
-//const playerMat = new THREE.MeshStandardMaterial({ color: 0xff5555 });
-//const player = new THREE.Mesh(playerGeom, playerMat);
-//player.position.set(0, playerHeight * 3, 0);
-//player.castShadow = true;
-//scene.add(player);
-
 let moveForward = false;
 let moveBackward = false;
 let moveLeft = false;
@@ -543,9 +538,9 @@ function animate() {
   spotLightHelper.update();
   spotLight2Helper.update();
   if (stopAnimation) return;
-  requestAnimationFrame(animate);
-
   const delta = clock.getDelta();
+  if (playerMixer) playerMixer.update(delta);
+  requestAnimationFrame(animate);
 
   // movement
   const moveDistance = moveSpeed * delta;
@@ -569,8 +564,8 @@ function animate() {
   raycaster.set(player.position.clone(), new THREE.Vector3(0, -1, 0));
   const intersects = raycaster.intersectObjects([
     ...panels,
-    startPlatform,
-    endPlatform,
+    startPlatformCollision,
+    endPlatformCollision,
   ]);
   canJump = false;
   if (intersects.length > 0) {
