@@ -5,6 +5,9 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 const playerWidth = 0.5;
 const panelCount = 10;
 let endPos = new THREE.Vector3(0, 0, -panelCount * 3 - 4);
+let checkpointUnlocked = false;
+const checkpointPos = new THREE.Vector3(0, 0, -((panelCount / 2) * 3));
+let checkpointPlatformVisual, checkpointPlatformCollision;
 
 // SCENE, CAM, RENDER etc
 const scene = new THREE.Scene();
@@ -190,6 +193,24 @@ const endPlatformVisual = new THREE.Mesh(platformGeom, platformMat);
 endPlatformVisual.position.copy(endPos);
 endPlatformVisual.receiveShadow = true;
 scene.add(endPlatformVisual);
+
+
+// CHECKPOINT
+checkpointPlatformVisual = new THREE.Mesh(platformGeom.clone(), platformMat.clone());
+checkpointPlatformVisual.position.copy(checkpointPos);
+checkpointPlatformVisual.receiveShadow = true;
+scene.add(checkpointPlatformVisual);
+
+const checkpointCollisionGeom = new THREE.BoxGeometry(
+  platformSize + playerWidth + 0.1,
+  panelThickness,
+  platformSize + playerWidth + 0.1
+);
+checkpointCollisionGeom.translate(0, -panelThickness / 2, 0);
+const checkpointCollisionMat = new THREE.MeshBasicMaterial({ visible: false });
+checkpointPlatformCollision = new THREE.Mesh(checkpointCollisionGeom, checkpointCollisionMat);
+checkpointPlatformCollision.position.copy(checkpointPos);
+scene.add(checkpointPlatformCollision);
 
 ////////////// ELLIPTICAL LIGHTS
 const numStrips = 10;
@@ -383,6 +404,9 @@ function add2Lights(x, y, z) {
 // PANELS
 for (let i = 1; i <= panelCount; i++) {
   const zPos = -i * 3;
+  if (zPos === checkpointPos.z) {
+    continue; 
+  }
   const xOffset = 1.0;
   const safeOnLeft = Math.random() < 0.5;
 
@@ -578,11 +602,22 @@ function breakPanel(collisionMesh) {
   fallingPanels.push({ mesh: visiblePanel, velocityY: 0 });
 }
 
-function resetToStart() {
-  player.position.set(0, playerHeight / 2, 0);
+function resetPlayerPosition() {
+  if (checkpointUnlocked) {
+    // Respawn at checkpoint
+    player.position.set(
+      checkpointPos.x, 
+      checkpointPos.y + playerHeight / 2, 
+      checkpointPos.z
+    );
+  } else {
+    // Default to start
+    player.position.set(0, playerHeight / 2, 0);
+  }
   velocityY = 0;
   canJump = true;
-}
+};
+
 
 // Animation loop control
 const clock = new THREE.Clock();
@@ -619,6 +654,7 @@ function animate() {
   const intersects = raycaster.intersectObjects([
     ...panelCollisions,
     startPlatformCollision,
+    checkpointPlatformCollision,
     endPlatformCollision,
   ]);
   canJump = false;
@@ -634,8 +670,16 @@ function animate() {
       velocityY = 0;
       canJump = true;
 
+
       if (surface === endPlatformCollision) {
-        resetToStart();
+        resetPlayerPosition();
+        checkpointUnlocked = false;
+      }
+
+      if (surface === checkpointPlatformCollision && !checkpointUnlocked) {
+        checkpointUnlocked = true;
+        checkpointPlatformVisual.material.color.set(0x00ff00);
+        console.log("Checkpoint unlocked!");
       }
 
       // trigger break if applicable
@@ -688,7 +732,7 @@ function animate() {
 
   // reset on death
   if (player.position.y < -5) {
-    resetToStart();
+    resetPlayerPosition();
   }
 
   ///////////////////// DOLL LOGIC
@@ -756,7 +800,7 @@ function animate() {
     if (bullets[i].position.distanceTo(player.position) < 1) {
       spawnBloodSpray(player.position);
       console.log("Player Hit! Resetting...");
-      player.position.set(0, 1, 0);
+      resetPlayerPosition();
       scene.remove(bullets[i]);
       bullets.splice(i, 1);
     }
