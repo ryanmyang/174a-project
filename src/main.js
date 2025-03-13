@@ -357,6 +357,19 @@ let currentStepReached = 0;
 
 // break panel
 function breakPanel(collisionMesh) {
+  const visiblePanel = collisionMesh.userData.visibleMesh;
+
+  // figuring out which way to rotate based on player landing on which corner
+  const offset = new THREE.Vector3().subVectors(
+    player.position,
+    visiblePanel.position
+  );
+  const up = new THREE.Vector3(0, 1, 0);
+  const tiltAxis = new THREE.Vector3().crossVectors(up, offset).normalize();
+  visiblePanel.userData.tiltAxis = tiltAxis;
+  visiblePanel.userData.angularVelocity = 1.5;
+  visiblePanel.userData.isFalling = true;
+
   // remove
   scene.remove(collisionMesh);
   const collisionIndex = panelCollisions.indexOf(collisionMesh);
@@ -365,7 +378,6 @@ function breakPanel(collisionMesh) {
   }
 
   
-  const visiblePanel = collisionMesh.userData.visibleMesh;
   const idx = panels.indexOf(visiblePanel);
   if (idx !== -1) panels.splice(idx, 1);
   visiblePanel.userData.broken = true;
@@ -441,15 +453,30 @@ function animate() {
 
   // PHYSICS FOR FALLING PANELS
   for (let i = 0; i < fallingPanels.length; i++) {
-    const fp = fallingPanels[i];
-    fp.velocityY -= gravity * delta;
-    fp.mesh.position.y += fp.velocityY * delta;
-    fp.mesh.rotation.x += 0.01;
-    fp.mesh.rotation.z += 0.02;
+    const obj = fallingPanels[i];
+    const fp = obj.mesh;
+
+    const axis = fp.userData.tiltAxis;
+    const vel  = fp.userData.angularVelocity;
+    
+    fp.rotateOnWorldAxis(axis, vel * delta);
+
+    obj.velocityY -= gravity * delta;
+    fp.position.y += obj.velocityY * delta;    
+
+    const damp = 0.1
+    fp.userData.angularVelocity -= damp * delta;
+    if (fp.userData.angularVelocity < 0) {
+      fp.userData.angularVelocity = 0;
+    }
+    // fp.velocityY -= gravity * delta;
+    // fp.mesh.position.y += fp.velocityY * delta;
+    // fp.mesh.rotation.x += 0.01;
+    // fp.mesh.rotation.z += 0.02;
 
     // kill far panels
-    if (fp.mesh.position.y < -20) {
-      scene.remove(fp.mesh);
+    if (fp.position.y < -20) {
+      scene.remove(fp);
       fallingPanels.splice(i, 1);
       i--;
     }
