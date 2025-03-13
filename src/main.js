@@ -3,6 +3,10 @@ import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 
+const playerHeight = 1;
+const playerWidth = 0.5
+
+
 // SCENE, CAM, RENDER etc
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
@@ -58,6 +62,7 @@ const panelGeometry = new THREE.BoxGeometry(panelWidth, panelThickness, panelDep
 panelGeometry.translate(0, -panelThickness / 2, 0);
 
 const panels = [];
+const panelCollisions = [];
 
 // Rails next to panels
 const railWidth = 0.1;
@@ -72,16 +77,31 @@ const platformGeom = new THREE.BoxGeometry(platformSize + 0.2, panelThickness, p
 platformGeom.translate(0, -panelThickness / 2, 0);
 const platformMat = new THREE.MeshPhongMaterial({ color: 0x888888 });
 
-const startPlatform = new THREE.Mesh(platformGeom, platformMat);
-startPlatform.position.set(0, 0, 1); // changed to 1 so matches length in between
-startPlatform.receiveShadow = true;
-scene.add(startPlatform);
+// START
+const startPlatformVisual = new THREE.Mesh(platformGeom, platformMat);
+startPlatformVisual.position.set(0, 0, 1);
+startPlatformVisual.receiveShadow = true;
+scene.add(startPlatformVisual);
+const startCollisionGeom = new THREE.BoxGeometry(platformSize + playerWidth+0.1, panelThickness, platformSize + playerWidth+0.1);
+startCollisionGeom.translate(0, -panelThickness / 2, 0);
+const startCollisionMat = new THREE.MeshBasicMaterial({ visible: false });
+const startPlatformCollision = new THREE.Mesh(startCollisionGeom, startCollisionMat);
+startPlatformCollision.position.set(0, 0, 1);
+scene.add(startPlatformCollision);
 
-const endPlatform = new THREE.Mesh(platformGeom, platformMat);
+//END
 let endPos = new THREE.Vector3(0, 0, -(panelCount) * 3 - 4);
-endPlatform.position.copy(endPos);
-endPlatform.receiveShadow = true;
-scene.add(endPlatform);
+const endPlatformVisual = new THREE.Mesh(platformGeom, platformMat);
+endPlatformVisual.position.copy(endPos);
+endPlatformVisual.receiveShadow = true;
+scene.add(endPlatformVisual);
+const endCollisionGeom = new THREE.BoxGeometry(platformSize + playerWidth+0.1, panelThickness, platformSize + playerWidth+0.1);
+endCollisionGeom.translate(0, -panelThickness / 2, 0);
+const endCollisionMat = new THREE.MeshBasicMaterial({ visible: false });
+const endPlatformCollision = new THREE.Mesh(endCollisionGeom, endCollisionMat);
+endPlatformCollision.position.copy(endPos);
+scene.add(endPlatformCollision);
+
 
 ///////////////////////////////// DOLL
 
@@ -164,14 +184,13 @@ function add2Lights(x, y, z){ //add 2 lights going backwards from the current po
   }
 }
 
-// Make a bunch of panels
+// PANELS
 for (let i = 1; i <= panelCount; i++) {
   const zPos = -i * 3;
   const xOffset = 1.0;
-  // randomly decide if left or right is safe
   const safeOnLeft = Math.random() < 0.5;
 
-  // init left panel
+  // LEFT PANEL
   const leftPanel = new THREE.Mesh(panelGeometry, null);
   leftPanel.position.set(-xOffset, 0, zPos);
   leftPanel.castShadow = true;
@@ -183,7 +202,20 @@ for (let i = 1; i <= panelCount; i++) {
   const llrailxOffset = -1 - panelWidth/2 - railWidth/2;
   add2Lights(llrailxOffset - 0.1, -0.1, zPos - panelDepth/2); //x,y,z at the top of panel
 
-  // init right panel
+  // LEFT COLLISION MESH (bigger, invisible)
+  const leftCollisionGeom = new THREE.BoxGeometry(panelWidth + 0.5, panelThickness, panelDepth + 0.5);
+  leftCollisionGeom.translate(0, -panelThickness / 2, 0);
+  const collisionMat = new THREE.MeshBasicMaterial({ visible: false });
+  const leftPanelCollision = new THREE.Mesh(leftCollisionGeom, collisionMat);
+  leftPanelCollision.position.copy(leftPanel.position);
+  leftPanelCollision.userData.breakable = leftPanel.userData.breakable;
+  leftPanelCollision.userData.index = leftPanel.userData.index;
+  leftPanel.userData.collisionMesh = leftPanelCollision;
+  leftPanelCollision.userData.visibleMesh = leftPanel;
+  scene.add(leftPanelCollision);
+  panelCollisions.push(leftPanelCollision);
+
+  // RIGHT PANEL (visible)
   const rightPanel = new THREE.Mesh(panelGeometry, null);
   rightPanel.position.set(xOffset, 0, zPos);
   rightPanel.castShadow = true;
@@ -194,7 +226,20 @@ for (let i = 1; i <= panelCount; i++) {
   panels.push(rightPanel);
   const rrrailxOffset = 1 + panelWidth/2 + railWidth/2;
   add2Lights(rrrailxOffset + 0.1, -0.1, zPos - panelDepth/2); //x,y,z at the top of panel
+
+  // RIGHT COLLISION MESH
+  const rightCollisionGeom = new THREE.BoxGeometry(panelWidth + 0.5, panelThickness, panelDepth + 0.5);
+  rightCollisionGeom.translate(0, -panelThickness / 2, 0);
+  const rightPanelCollision = new THREE.Mesh(rightCollisionGeom, collisionMat.clone());
+  rightPanelCollision.position.copy(rightPanel.position);
+  rightPanelCollision.userData.breakable = rightPanel.userData.breakable;
+  rightPanelCollision.userData.index = rightPanel.userData.index;
+  rightPanel.userData.collisionMesh = rightPanelCollision;
+  rightPanelCollision.userData.visibleMesh = rightPanel;
+  scene.add(rightPanelCollision);
+  panelCollisions.push(rightPanelCollision);
 }
+
 
 const glassMaterial = new THREE.MeshPhysicalMaterial({
   color: 0x88ccee,
@@ -230,8 +275,7 @@ scene.add(rlRail);
 scene.add(rrRail);
 
 // Make the player
-const playerHeight = 1;
-const playerGeom = new THREE.BoxGeometry(0.5, playerHeight, 0.5);
+const playerGeom = new THREE.BoxGeometry(playerWidth, playerHeight, playerWidth);
 const playerMat = new THREE.MeshStandardMaterial({ color: 0xff5555 });
 const player = new THREE.Mesh(playerGeom, playerMat);
 player.position.set(0, playerHeight*3, 0);
@@ -312,11 +356,21 @@ let score = 0;
 let currentStepReached = 0;
 
 // break panel
-function breakPanel(panel) {
-  const idx = panels.indexOf(panel);
+function breakPanel(collisionMesh) {
+  // remove
+  scene.remove(collisionMesh);
+  const collisionIndex = panelCollisions.indexOf(collisionMesh);
+  if (collisionIndex !== -1) {
+    panelCollisions.splice(collisionIndex, 1);
+  }
+
+  
+  const visiblePanel = collisionMesh.userData.visibleMesh;
+  const idx = panels.indexOf(visiblePanel);
   if (idx !== -1) panels.splice(idx, 1);
-  panel.userData.broken = true;
-  fallingPanels.push({ mesh: panel, velocityY: 0 });
+  visiblePanel.userData.broken = true;
+  fallingPanels.push({ mesh: visiblePanel, velocityY: 0 });
+
 }
 
 function resetToStart() {
@@ -354,7 +408,7 @@ function animate() {
 
   // SURFACE DETECTION PHYSICS
   raycaster.set(player.position.clone(), new THREE.Vector3(0, -1, 0));
-  const intersects = raycaster.intersectObjects([...panels, startPlatform, endPlatform]);
+  const intersects = raycaster.intersectObjects([...panelCollisions, startPlatformCollision, endPlatformCollision]);
   canJump = false;
   if (intersects.length > 0) {
     const hit = intersects[0];
@@ -430,7 +484,7 @@ function animate() {
   }
 
   // can shoot
-  if (Math.abs(0 - dollTargetRotation) < 0.05){
+  if (Math.abs(0 - doll.rotation.y) < 0.25){
     dollRotationComplete = true;
   } else {
     dollRotationComplete = false;
@@ -446,7 +500,7 @@ function animate() {
   console.log(`moving ${moving}, isRedLight ${isRedLight}, rotComplete ${dollRotationComplete}`)
 
   // CHECK PLAYER MOVEMENT DURING RED LIGHT
-  const playerPastStart = player.position.z < startPlatform.position.z - 1
+  const playerPastStart = player.position.z < startPlatformVisual.position.z - 1
   if (isRedLight && moving && dollRotationComplete && playerPastStart) {
     // shootProjectile();
     // fire rate logic
