@@ -6,7 +6,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 const playerWidth = 0.5;
 // SCENE, CAM, RENDER etc
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb);
+scene.background = new THREE.Color(0x000000);
 scene.fog = new THREE.Fog(0x87ceeb, 50, 200);
 
 const camera = new THREE.PerspectiveCamera(
@@ -38,6 +38,27 @@ dirLight.shadow.mapSize.width = 1024;
 dirLight.shadow.mapSize.height = 1024;
 scene.add(dirLight);
 
+////// SPOTLIGHTS
+const spotLight = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
+spotLight.position.set(-10, 15, -25);
+spotLight.target.position.set(0, 0, -25);
+scene.add(spotLight);
+scene.add(spotLight.target); // Ensure target is part of the scene
+
+// spotlight helper
+const spotLightHelper = new THREE.SpotLightHelper(spotLight);
+scene.add(spotLightHelper);
+
+const spotLight2 = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
+spotLight2.position.set(10, 15, -10);
+spotLight2.target.position.set(0, 0, -10);
+scene.add(spotLight2);
+scene.add(spotLight2.target); // Ensure target is part of the scene
+
+// spotlight helper
+const spotLight2Helper = new THREE.SpotLightHelper(spotLight2);
+scene.add(spotLight2Helper);
+
 // Audio
 const listener = new THREE.AudioListener();
 camera.add(listener);
@@ -62,6 +83,12 @@ const panelGeometry = new THREE.BoxGeometry(
 panelGeometry.translate(0, -panelThickness / 2, 0);
 
 const panels = [];
+const pinkMetalMaterial = new THREE.MeshStandardMaterial({
+  //pink metallic for rails and platform
+  color: 0xff6b81,
+  metalness: 0.8,
+  roughness: 0.2,
+});
 const panelCollisions = [];
 
 // Rails next to panels
@@ -72,7 +99,7 @@ const railGeometry = new THREE.BoxGeometry(
   panelThickness,
   railDepth
 );
-const railMat = new THREE.MeshPhongMaterial({ color: 0x888888 });
+const railMat = pinkMetalMaterial;
 railGeometry.translate(0, -panelThickness / 2, 0);
 
 // start and end platforms
@@ -83,7 +110,7 @@ const platformGeom = new THREE.BoxGeometry(
   platformSize
 ); //added 0.2 so aligns with 0.1 width rails
 platformGeom.translate(0, -panelThickness / 2, 0);
-const platformMat = new THREE.MeshPhongMaterial({ color: 0x888888 });
+const platformMat = pinkMetalMaterial;
 
 // START
 const startPlatformVisual = new THREE.Mesh(platformGeom, platformMat);
@@ -110,6 +137,71 @@ const endPlatformVisual = new THREE.Mesh(platformGeom, platformMat);
 endPlatformVisual.position.copy(endPos);
 endPlatformVisual.receiveShadow = true;
 scene.add(endPlatformVisual);
+
+////////////// ELLIPTICAL LIGHTS
+const numStrips = 10;
+const stripLength = 15;
+const stripWidth = 0.2;
+const majorAxis = 20;
+const minorAxis = 10;
+
+// Function creates vertical strip
+function createStrip(length) {
+  const geometry = new THREE.BoxGeometry(stripWidth, length, stripWidth);
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffff00,
+    emissive: 0xffff00, //yellowish
+    side: THREE.DoubleSide,
+  });
+  const strip = new THREE.Mesh(geometry, material);
+  return strip;
+}
+
+const strips = [];
+// creating vertical strips for the ellipse
+for (let i = 0; i < numStrips; i++) {
+  if (i == 0) continue; // removes the first one blocking the player
+  const angle = (i / numStrips) * 2 * Math.PI; // getting the angle to calculate the coordinates
+  const z = majorAxis * Math.cos(angle);
+  const x = minorAxis * Math.sin(angle);
+
+  const strip = createStrip(stripLength);
+  strip.position.set(x, stripLength / 2 - 3, z - 17); // position properly to form ellipse
+
+  scene.add(strip);
+  strips.push(strip);
+}
+// creating horizontal ones connecting the vertical
+for (let i = 0; i < strips.length - 1; i++) {
+  const strip1 = strips[i];
+  const strip2 = strips[i + 1];
+
+  const top1 = new THREE.Vector3(
+    strip1.position.x,
+    strip1.position.y + stripLength / 2,
+    strip1.position.z
+  );
+  const top2 = new THREE.Vector3(
+    strip2.position.x,
+    strip2.position.y + stripLength / 2,
+    strip2.position.z
+  );
+  const distance = top1.distanceTo(top2); // calculates the distance between the top = length of the strip
+
+  const horizontalStrip = createStrip(distance);
+
+  const midpoint = new THREE.Vector3()
+    .addVectors(top1, top2)
+    .multiplyScalar(0.5); // get the midpoint to position the strip
+  horizontalStrip.position.set(midpoint.x, midpoint.y, midpoint.z);
+
+  const direction = new THREE.Vector3().subVectors(top2, top1); //Rotate the strip to face from strip1 to strip2
+  const angle = Math.atan2(direction.x, direction.z);
+  horizontalStrip.rotation.z = -angle;
+  horizontalStrip.rotation.x = Math.PI / 2; // rotate so the ends touch each other
+
+  scene.add(horizontalStrip);
+}
 const endCollisionGeom = new THREE.BoxGeometry(
   platformSize + playerWidth + 0.1,
   panelThickness,
@@ -301,7 +393,7 @@ const glassMaterial = new THREE.MeshPhysicalMaterial({
   color: 0x88ccee,
   metalness: 0,
   roughness: 0.1,
-  transmission: 1.0,
+  transmission: 0.9,
   thickness: panelThickness,
   ior: 1.5,
   envMapIntensity: 1.0,
@@ -448,6 +540,8 @@ const clock = new THREE.Clock();
 let stopAnimation = false;
 
 function animate() {
+  spotLightHelper.update();
+  spotLight2Helper.update();
   if (stopAnimation) return;
   requestAnimationFrame(animate);
 
@@ -461,10 +555,12 @@ function animate() {
   if (moveRight) player.position.x += moveDistance;
 
   // connect the cam to the player (uncomment to stick camera unto player and not use orbit controls)
+
   camera.position.x = player.position.x;
-  camera.position.z = player.position.z + 5;
+  camera.position.z = player.position.z + 7;
   camera.position.y = player.position.y + 3;
   camera.lookAt(player.position.x, player.position.y + 0.5, player.position.z);
+
   // Gravity
   velocityY -= gravity * delta;
   player.position.y += velocityY * delta;
