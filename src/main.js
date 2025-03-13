@@ -242,32 +242,40 @@ loader.load("assets/doll.obj", function (object) {
 let player;
 let playerMixer;
 let idleAction;
-loader2.load(
-  "../assets/neutral_idle.glb",
-  (gltf) => {
-    player = gltf.scene;
-    player.scale.set(1, 1, 1);
-    // Adjust player's position so the base sits at y = 0
-    const box = new THREE.Box3().setFromObject(player);
-    const bboxMin = box.min.y; // lowest Y value of the model
-    player.position.set(0, -bboxMin, 0);
-    scene.add(player);
-    // playerMixer = new THREE.AnimationMixer(player);
-    // idleAction = playerMixer.clipAction(gltf.animations[0]);
-    // idleAction.setLoop(THREE.LoopRepeat, Infinity);
-    // idleAction.clampWhenFinished = true;
-    // idleAction.play();
-  },
-  undefined,
-  (error) => {
-    console.error("Error loading the model:", error);
-  }
-);
+let jumpAction;
 
-// let jumping;
-// loader2.load("../assets/jump.glb", (gltf) => {
-//   jumping = gltf.animations[0]; //get jump animation
-// });
+loader2.load("../assets/main.glb", (gltf) => {
+  player = gltf.scene;
+  player.scale.set(1, 1, 1);
+  // Adjust player's position so the base sits at y = 0
+  const box = new THREE.Box3().setFromObject(player);
+  const bboxMin = box.min.y; // lowest Y value of the model
+  player.position.set(0, -bboxMin, 0);
+  scene.add(player);
+  playerMixer = new THREE.AnimationMixer(player);
+  idleAction = playerMixer.clipAction(gltf.animations[0]);
+  idleAction.setLoop(THREE.LoopRepeat, Infinity);
+  idleAction.play();
+
+  // Load jump animation after player is loaded
+  loader2.load("../assets/jump.glb", (gltf) => {
+    const jumping = gltf.animations[0]; // get jump animation
+    jumpAction = playerMixer.clipAction(jumping);
+    jumpAction.setLoop(THREE.LoopOnce, 1);
+    jumpAction.clampWhenFinished = true;
+    console.log("Jump animation loaded");
+  });
+
+  // Listen for when the jump animation finishes
+  playerMixer.addEventListener("finished", (e) => {
+    if (e.action === jumpAction) {
+      console.log("Jump animation finished, switching to idle");
+      jumpAction.crossFadeTo(idleAction, 0.2, false);
+      idleAction.reset().play();
+      jumpAction.reset();
+    }
+  });
+});
 
 // PROJECTILES
 let bullets = [];
@@ -462,6 +470,11 @@ document.addEventListener("keydown", (event) => {
         velocityY = 5;
         console.log("Jump!");
         canJump = false;
+        if (playerMixer && idleAction && jumpAction) {
+          console.log("Switching to jump animation");
+          idleAction.crossFadeTo(jumpAction, 0.2, false);
+          jumpAction.reset().play();
+        }
       }
       break;
   }
@@ -579,6 +592,7 @@ function animate() {
       player.position.y = surface.position.y + playerHeight / 2;
       velocityY = 0;
       canJump = true;
+      console.log("Can jump, on surface:", surface);
 
       if (surface === endPlatformCollision) {
         resetToStart();
@@ -596,7 +610,7 @@ function animate() {
       ) {
         currentStepReached = surface.userData.index;
         score++;
-        console.log(`Score: ${score}`);
+        console.log(Score: ${score});
       }
     }
   }
@@ -675,7 +689,7 @@ function animate() {
     // eyeLight.intensity = isRedLight ? 3 : 0;
   }
   console.log(
-    `moving ${moving}, isRedLight ${isRedLight}, rotComplete ${dollRotationComplete}`
+    moving ${moving}, isRedLight ${isRedLight}, rotComplete ${dollRotationComplete}
   );
 
   // CHECK PLAYER MOVEMENT DURING RED LIGHT
@@ -691,7 +705,7 @@ function animate() {
       lastShotTime = currentTime;
     } else {
       console.log(
-        `time not satisfied. ${currentTime}, ${lastShotTime}, ${minFireWait}`
+        time not satisfied. ${currentTime}, ${lastShotTime}, ${minFireWait}
       );
     }
   }
