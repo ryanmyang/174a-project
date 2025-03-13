@@ -1,9 +1,11 @@
 import * as THREE from "three";
-import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 const playerWidth = 0.5;
+const panelCount = 10;
+let endPos = new THREE.Vector3(0, 0, -panelCount * 3 - 4);
+
 // SCENE, CAM, RENDER etc
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
@@ -49,6 +51,17 @@ scene.add(spotLight.target); // Ensure target is part of the scene
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 scene.add(spotLightHelper); */
 
+const spotLightDoll = new THREE.SpotLight(0xffffff, 200, 25, Math.PI / 12, 0.5, 1);
+spotLightDoll.position.set(10,15,-20);
+let dollLightTarget = endPos.clone();
+dollLightTarget.y += 5;
+spotLightDoll.target.position.copy(dollLightTarget);
+scene.add(spotLightDoll);
+scene.add(spotLightDoll.target);
+const spotLightDollHelper = new THREE.SpotLightHelper(spotLightDoll);
+scene.add(spotLightDollHelper);
+
+
 const spotLight2 = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
 spotLight2.position.set(10, 15, -10);
 spotLight2.target.position.set(0, 0, -10);
@@ -58,6 +71,48 @@ scene.add(spotLight2.target); // Ensure target is part of the scene
 /* spotlight helper
 const spotLight2Helper = new THREE.SpotLightHelper(spotLight2);
 scene.add(spotLight2Helper); */
+
+
+//// BLOOD SPRAY
+const bloodSprays = [];
+function spawnBloodSpray(spawnPos) {
+  const count = 20;
+  const positions = new Float32Array(count * 3);
+  const velocities = []; 
+
+  for (let i = 0; i < count; i++) {
+    const i3 = i * 3;
+
+    positions[i3 + 0] = spawnPos.x;
+    positions[i3 + 1] = spawnPos.y;
+    positions[i3 + 2] = spawnPos.z;
+
+
+    velocities[i] = new THREE.Vector3(
+      (Math.random() - 0.5) * 2,
+      Math.random() * 2 + 1,
+      (Math.random() - 0.5) * 2 + 3
+    );
+  }
+
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    color: 0x9f0000,
+    size: 0.1,
+    sizeAttenuation: true
+  });
+  const points = new THREE.Points(geometry, material);
+  points.userData.velocities = velocities;
+  points.userData.lifetimes = new Float32Array(count).fill(2.0);
+  scene.add(points);
+  bloodSprays.push(points);
+}
+
+
+//// END BLOOD SPRAY
 
 // Audio
 const listener = new THREE.AudioListener();
@@ -70,7 +125,6 @@ audioLoader.load("assets/shot.mp3", function (buffer) {
 });
 
 // Bridge panels
-const panelCount = 10;
 const panelWidth = 1;
 const panelDepth = 1;
 const panelThickness = 0.2;
@@ -132,7 +186,6 @@ startPlatformCollision.position.set(0, 0, 1);
 scene.add(startPlatformCollision);
 
 //END
-let endPos = new THREE.Vector3(0, 0, -panelCount * 3 - 4);
 const endPlatformVisual = new THREE.Mesh(platformGeom, platformMat);
 endPlatformVisual.position.copy(endPos);
 endPlatformVisual.receiveShadow = true;
@@ -255,17 +308,18 @@ let lightSwitchTimer = 0;
 let nextLightSwitch = Math.random() * 5 + 3;
 
 // Load doll
-const loader = new OBJLoader();
 const loader2 = new GLTFLoader();
+
 let doll;
-loader.load("assets/doll.obj", function (object) {
-  doll = object;
+const gltfLoader = new GLTFLoader();
+gltfLoader.load('assets/doll.glb', (gltf) => {
+  doll = gltf.scene;
   doll.position.copy(endPos);
   doll.position.y += 2;
   doll.scale.set(10, 10, 10);
   doll.rotation.y = dollTargetRotation;
 
-  // DOLL EYE LIGHTS
+  // Optional: Add any lights to the doll if desired
   const eyeLight = new THREE.PointLight(0xff0000, 0, 3);
   eyeLight.position.set(0, 2, 0);
   doll.add(eyeLight);
@@ -588,8 +642,8 @@ function animate() {
   // connect the cam to the player (uncomment to stick camera unto player and not use orbit controls)
   
   camera.position.x = player.position.x;
-  camera.position.z = player.position.z + 7;
-  camera.position.y = player.position.y + 3;
+  camera.position.z = player.position.z + 5;
+  camera.position.y = player.position.y + 2.5;
   camera.lookAt(player.position.x, player.position.y + 0.5, player.position.z);
   
   // Gravity
@@ -736,12 +790,39 @@ function animate() {
   for (let i = 0; i < bullets.length; i++) {
     bullets[i].position.add(bullets[i].userData.velocity);
     if (bullets[i].position.distanceTo(player.position) < 1) {
+      spawnBloodSpray(player.position);
       console.log("Player Hit! Resetting...");
       player.position.set(0, 1, 0);
       scene.remove(bullets[i]);
       bullets.splice(i, 1);
     }
   }
+
+
+  //// BLOOD SPRAYS
+  for (let i = 0; i < bloodSprays.length; i++) {
+    const points = bloodSprays[i];
+    const posArray = points.geometry.attributes.position.array;
+    const velocities = points.userData.velocities;
+    const lifetimes = points.userData.lifetimes;
+
+    for (let p = 0; p < velocities.length; p++) {
+      const i3 = p * 3;
+      lifetimes[p] -= delta;
+
+      if (lifetimes[p] <= 0) {
+        posArray[i3 + 1] = -9999;
+        velocities[p].set(0, 0, 0);
+        continue;
+      }
+      velocities[p].y -= 9.8 * 0.5 * delta;
+      posArray[i3 + 0] += velocities[p].x * delta;
+      posArray[i3 + 1] += velocities[p].y * delta;
+      posArray[i3 + 2] += velocities[p].z * delta;
+    }
+    points.geometry.attributes.position.needsUpdate = true;
+  }
+
 
   renderer.render(scene, camera);
 }
