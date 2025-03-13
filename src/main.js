@@ -434,6 +434,10 @@ function animate() {
       velocityY = 0;
       canJump = true;
 
+      if (surface === endPlatformCollision) {
+        resetToStart();
+      }
+
       // trigger break if applicable
       if (surface.userData.breakable && !surface.userData.broken) {
         breakPanel(surface);
