@@ -45,9 +45,9 @@ spotLight.target.position.set(0, 0, -25);
 scene.add(spotLight);
 scene.add(spotLight.target); // Ensure target is part of the scene
 
-// spotlight helper
+/* spotlight helper
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
-scene.add(spotLightHelper);
+scene.add(spotLightHelper); */
 
 const spotLight2 = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
 spotLight2.position.set(10, 15, -10);
@@ -55,9 +55,9 @@ spotLight2.target.position.set(0, 0, -10);
 scene.add(spotLight2);
 scene.add(spotLight2.target); // Ensure target is part of the scene
 
-// spotlight helper
+/* spotlight helper
 const spotLight2Helper = new THREE.SpotLightHelper(spotLight2);
-scene.add(spotLight2Helper);
+scene.add(spotLight2Helper); */
 
 // Audio
 const listener = new THREE.AudioListener();
@@ -171,6 +171,33 @@ for (let i = 0; i < numStrips; i++) {
   scene.add(strip);
   strips.push(strip);
 }
+// Curtain texture
+const textureLoader = new THREE.TextureLoader();
+const curtainTexture = textureLoader.load("/assets/curtain.jpg");
+// Checker texture
+const plane1 = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10);  // Clips x > 9
+const plane2 = new THREE.Plane(new THREE.Vector3(1, 0, 0), 10);   // Clips x < -9
+const checkerTexture = textureLoader.load("/assets/checker.jpg");
+checkerTexture.wrapS = THREE.RepeatWrapping; // Repeat horizontally
+checkerTexture.wrapT = THREE.RepeatWrapping; // Repeat vertically
+checkerTexture.repeat.set(5, 5); // Adjust the number of repeats (X, Y)
+// Curtain material with texture
+const curtainMaterial = new THREE.MeshStandardMaterial({
+  map: curtainTexture,
+  side: THREE.DoubleSide
+});
+const checkerMaterial = new THREE.MeshStandardMaterial({
+  map: checkerTexture,
+  side: THREE.DoubleSide,
+  clippingPlanes: [plane1, plane2]
+});
+renderer.localClippingEnabled = true;
+const checkerPlane = new THREE.PlaneGeometry(38, 38);
+const checkerMesh = new THREE.Mesh(checkerPlane, checkerMaterial);
+checkerMesh.position.set(0, -3.05, -17);
+checkerMesh.rotation.x = Math.PI/2;
+scene.add(checkerMesh);
+
 // creating horizontal ones connecting the vertical
 for (let i = 0; i < strips.length - 1; i++) {
   const strip1 = strips[i];
@@ -189,18 +216,24 @@ for (let i = 0; i < strips.length - 1; i++) {
   const distance = top1.distanceTo(top2); // calculates the distance between the top = length of the strip
 
   const horizontalStrip = createStrip(distance);
-
+  //Curtain Mesh
+  const curtainPlane = new THREE.PlaneGeometry(distance, 15);
+  const curtainMesh = new THREE.Mesh(curtainPlane, curtainMaterial);
+  
   const midpoint = new THREE.Vector3()
     .addVectors(top1, top2)
     .multiplyScalar(0.5); // get the midpoint to position the strip
   horizontalStrip.position.set(midpoint.x, midpoint.y, midpoint.z);
+  curtainMesh.position.set(midpoint.x, 4.5, midpoint.z);
 
   const direction = new THREE.Vector3().subVectors(top2, top1); //Rotate the strip to face from strip1 to strip2
   const angle = Math.atan2(direction.x, direction.z);
   horizontalStrip.rotation.z = -angle;
   horizontalStrip.rotation.x = Math.PI / 2; // rotate so the ends touch each other
+  curtainMesh.rotation.y = Math.PI/2 + angle;
 
   scene.add(horizontalStrip);
+  scene.add(curtainMesh);
 }
 const endCollisionGeom = new THREE.BoxGeometry(
   platformSize + playerWidth + 0.1,
@@ -228,6 +261,7 @@ let doll;
 loader.load("assets/doll.obj", function (object) {
   doll = object;
   doll.position.copy(endPos);
+  doll.position.y += 2;
   doll.scale.set(10, 10, 10);
   doll.rotation.y = dollTargetRotation;
 
@@ -535,8 +569,10 @@ const clock = new THREE.Clock();
 let stopAnimation = false;
 
 function animate() {
+  /*
   spotLightHelper.update();
   spotLight2Helper.update();
+  */
   if (stopAnimation) return;
   const delta = clock.getDelta();
   if (playerMixer) playerMixer.update(delta);
@@ -550,12 +586,12 @@ function animate() {
   if (moveRight) player.position.x += moveDistance;
 
   // connect the cam to the player (uncomment to stick camera unto player and not use orbit controls)
-
+  
   camera.position.x = player.position.x;
   camera.position.z = player.position.z + 7;
   camera.position.y = player.position.y + 3;
   camera.lookAt(player.position.x, player.position.y + 0.5, player.position.z);
-
+  
   // Gravity
   velocityY -= gravity * delta;
   player.position.y += velocityY * delta;
@@ -633,7 +669,7 @@ function animate() {
   }
 
   // reset on death
-  if (player.position.y < -5) {
+  if (player.position.y < -3.2) {
     resetToStart();
   }
 
