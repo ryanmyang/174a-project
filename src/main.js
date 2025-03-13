@@ -41,7 +41,7 @@ dirLight.shadow.mapSize.height = 1024;
 scene.add(dirLight);
 
 ////// SPOTLIGHTS
-const spotLight = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
+const spotLight = new THREE.SpotLight(0xffffff, 75, 20, Math.PI / 12, 0.5, 1);
 spotLight.position.set(-10, 15, -25);
 spotLight.target.position.set(0, 0, -25);
 scene.add(spotLight);
@@ -51,15 +51,15 @@ scene.add(spotLight.target); // Ensure target is part of the scene
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 scene.add(spotLightHelper); */
 
-const spotLightDoll = new THREE.SpotLight(0xffffff, 200, 25, Math.PI / 12, 0.5, 1);
+const spotLightDoll = new THREE.SpotLight(0xffffff, 50, 25, Math.PI / 12, 0.5, 1);
 spotLightDoll.position.set(10,15,-20);
 let dollLightTarget = endPos.clone();
 dollLightTarget.y += 5;
 spotLightDoll.target.position.copy(dollLightTarget);
 scene.add(spotLightDoll);
 scene.add(spotLightDoll.target);
-const spotLightDollHelper = new THREE.SpotLightHelper(spotLightDoll);
-scene.add(spotLightDollHelper);
+//const spotLightDollHelper = new THREE.SpotLightHelper(spotLightDoll);
+//scene.add(spotLightDollHelper);
 
 
 const spotLight2 = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
