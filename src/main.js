@@ -37,6 +37,17 @@ dirLight.shadow.mapSize.width = 1024;
 dirLight.shadow.mapSize.height = 1024;
 scene.add(dirLight);
 
+
+// Audio
+const listener = new THREE.AudioListener();
+camera.add(listener);
+const shotSound = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load('assets/shot.mp3', function(buffer) {
+    shotSound.setBuffer(buffer);
+    shotSound.setVolume(0.5);
+});
+
 // Bridge panels
 const panelCount = 10;
 const panelWidth = 1;
@@ -102,11 +113,13 @@ loader.load('assets/doll.obj', function (object) {
 
 // PROJECTILES
 let bullets = [];
-const minFireWait = 0.1;
+const minFireWait = 1;
 const bulletSpeed = 1.5;
 let lastShotTime = -minFireWait;
 function shootProjectile() {
   console.log("shoot!!")
+  if (shotSound.isPlaying) shotSound.stop(); 
+  shotSound.play();
     const bullet = new THREE.Mesh(
         new THREE.SphereGeometry(0.1, 8, 8),
         new THREE.MeshBasicMaterial({ color: 0xff0000 })
@@ -221,7 +234,7 @@ const playerHeight = 1;
 const playerGeom = new THREE.BoxGeometry(0.5, playerHeight, 0.5);
 const playerMat = new THREE.MeshStandardMaterial({ color: 0xff5555 });
 const player = new THREE.Mesh(playerGeom, playerMat);
-player.position.set(0, playerHeight / 2, 0);
+player.position.set(0, playerHeight*3, 0);
 player.castShadow = true;
 scene.add(player);
 
@@ -417,7 +430,7 @@ function animate() {
   }
 
   // can shoot
-  if (Math.abs(doll.rotation.y - dollTargetRotation) < 0.15){
+  if (Math.abs(0 - dollTargetRotation) < 0.05){
     dollRotationComplete = true;
   } else {
     dollRotationComplete = false;
@@ -433,14 +446,18 @@ function animate() {
   console.log(`moving ${moving}, isRedLight ${isRedLight}, rotComplete ${dollRotationComplete}`)
 
   // CHECK PLAYER MOVEMENT DURING RED LIGHT
-  if (isRedLight && moving && dollRotationComplete) {
-    shootProjectile();
+  const playerPastStart = player.position.z < startPlatform.position.z - 1
+  if (isRedLight && moving && dollRotationComplete && playerPastStart) {
+    // shootProjectile();
     // fire rate logic
-    // const currentTime = lightSwitchTimer;
-    // if (currentTime - lastShotTime >= minFireWait) {
-    //     shootProjectile();
-    //     lastShotTime = currentTime;
-    // }
+    const currentTime = clock.getElapsedTime();
+    if (currentTime - lastShotTime >= minFireWait) {
+        shootProjectile();
+        console.log('shoot')
+        lastShotTime = currentTime;
+    } else {
+      console.log(`time not satisfied. ${currentTime}, ${lastShotTime}, ${minFireWait}`)
+    }
   }
 
   // UPDATE BULLETS
