@@ -39,8 +39,8 @@ scene.add(ambientLight);
 const dirLight = new THREE.DirectionalLight(0xffffff, 1);
 dirLight.position.set(5, 20, 5);
 dirLight.castShadow = true;
-dirLight.shadow.mapSize.width = 1024;
-dirLight.shadow.mapSize.height = 1024;
+dirLight.shadow.mapSize.width = 256;
+dirLight.shadow.mapSize.height = 256;
 scene.add(dirLight);
 
 ////// SPOTLIGHTS
@@ -222,7 +222,7 @@ const minorAxis = 10;
 // Function creates vertical strip
 function createStrip(length) {
   const geometry = new THREE.BoxGeometry(stripWidth, length, stripWidth);
-  const material = new THREE.MeshStandardMaterial({
+  const material = new THREE.MeshBasicMaterial({
     color: 0xffff00,
     emissive: 0xffff00, //yellowish
     side: THREE.DoubleSide,
@@ -256,11 +256,11 @@ checkerTexture.wrapS = THREE.RepeatWrapping; // Repeat horizontally
 checkerTexture.wrapT = THREE.RepeatWrapping; // Repeat vertically
 checkerTexture.repeat.set(5, 5); // Adjust the number of repeats (X, Y)
 // Curtain material with texture
-const curtainMaterial = new THREE.MeshStandardMaterial({
+const curtainMaterial = new THREE.MeshBasicMaterial({
   map: curtainTexture,
   side: THREE.DoubleSide
 });
-const checkerMaterial = new THREE.MeshStandardMaterial({
+const checkerMaterial = new THREE.MeshBasicMaterial({
   map: checkerTexture,
   side: THREE.DoubleSide,
   clippingPlanes: [plane1, plane2]
@@ -422,7 +422,7 @@ function add2Lights(x, y, z) {
 
     // Add a sphere (light bulb) to represent the bulb
     const bulbGeometry = new THREE.SphereGeometry(0.04, 16, 16); // 0.04 radius
-    const bulbMaterial = new THREE.MeshStandardMaterial({
+    const bulbMaterial = new THREE.MeshBasicMaterial({
       emissive: 0xffff00, // Glow color
       emissiveIntensity: 1, // Glow intensity
       roughness: 0.5,
