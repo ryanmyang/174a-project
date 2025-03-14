@@ -15,12 +15,12 @@ scene.background = new THREE.Color(0x000000);
 scene.fog = new THREE.Fog(0x87ceeb, 50, 200);
 
 const camera = new THREE.PerspectiveCamera(
-  75,
+  65,
   window.innerWidth / window.innerHeight,
   0.1,
   500
 );
-camera.position.set(0, 5, 10);
+camera.position.set(0, 6, 10);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -672,12 +672,12 @@ function resetPlayerPosition() {
     // Respawn at checkpoint
     player.position.set(
       checkpointPos.x,
-      checkpointPos.y + playerHeight / 2,
+      checkpointPos.y + playerHeight,
       checkpointPos.z
     );
   } else {
     // Default to start
-    player.position.set(0, playerHeight / 2, 0);
+    player.position.set(0, playerHeight, 0);
   }
   velocityY = 0;
   canJump = true;
@@ -757,9 +757,9 @@ function animate() {
   // connect the cam to the player (uncomment to stick camera unto player and not use orbit controls)
 
   camera.position.x = player.position.x;
-  camera.position.z = player.position.z + 5;
-  camera.position.y = player.position.y + 2.5;
-  camera.lookAt(player.position.x, player.position.y + 0.5, player.position.z);
+  camera.position.z = player.position.z + 4;
+  camera.position.y = player.position.y + 2.75;
+  camera.lookAt(player.position.x, player.position.y +1, player.position.z);
 
   // Gravity
   velocityY -= gravity * delta;
