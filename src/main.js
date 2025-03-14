@@ -708,8 +708,8 @@ function animate() {
 
 
       if (surface === endPlatformCollision) {
-        resetPlayerPosition();
         checkpointUnlocked = false;
+        resetPlayerPosition();
       }
 
       if (surface === checkpointPlatformCollision && !checkpointUnlocked) {
@@ -831,14 +831,16 @@ function animate() {
   }
 
   // UPDATE BULLETS
-  for (let i = 0; i < bullets.length; i++) {
+  for (let i = bullets.length - 1; i >= 0; i--) {
     bullets[i].position.add(bullets[i].userData.velocity);
     if (bullets[i].position.distanceTo(player.position) < 1) {
-      spawnBloodSpray(player.position);
-      console.log("Player Hit! Resetting...");
-      resetPlayerPosition();
-      scene.remove(bullets[i]);
-      bullets.splice(i, 1);
+        spawnBloodSpray(player.position);
+        resetPlayerPosition();
+        scene.remove(bullets[i]);
+        bullets.splice(i, 1);
+    } else if (bullets[i].position.y < -5 || bullets[i].position.length() > 100) {
+        scene.remove(bullets[i]);
+        bullets.splice(i, 1);
     }
   }
 
