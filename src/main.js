@@ -708,8 +708,9 @@ function animate() {
 
 
       if (surface === endPlatformCollision) {
-        resetPlayerPosition();
         checkpointUnlocked = false;
+        checkpointPlatformVisual.material.color.set(0xff6b81)
+        resetPlayerPosition();
       }
 
       if (surface === checkpointPlatformCollision && !checkpointUnlocked) {
