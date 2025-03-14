@@ -54,8 +54,15 @@ scene.add(spotLight.target); // Ensure target is part of the scene
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
 scene.add(spotLightHelper); */
 
-const spotLightDoll = new THREE.SpotLight(0xffffff, 50, 25, Math.PI / 12, 0.5, 1);
-spotLightDoll.position.set(10,15,-20);
+const spotLightDoll = new THREE.SpotLight(
+  0xffffff,
+  50,
+  25,
+  Math.PI / 12,
+  0.5,
+  1
+);
+spotLightDoll.position.set(10, 15, -20);
 let dollLightTarget = endPos.clone();
 dollLightTarget.y += 5;
 spotLightDoll.target.position.copy(dollLightTarget);
@@ -63,7 +70,6 @@ scene.add(spotLightDoll);
 scene.add(spotLightDoll.target);
 //const spotLightDollHelper = new THREE.SpotLightHelper(spotLightDoll);
 //scene.add(spotLightDollHelper);
-
 
 const spotLight2 = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
 spotLight2.position.set(10, 15, -10);
@@ -75,13 +81,12 @@ scene.add(spotLight2.target); // Ensure target is part of the scene
 const spotLight2Helper = new THREE.SpotLightHelper(spotLight2);
 scene.add(spotLight2Helper); */
 
-
 //// BLOOD SPRAY
 const bloodSprays = [];
 function spawnBloodSpray(spawnPos) {
   const count = 20;
   const positions = new Float32Array(count * 3);
-  const velocities = []; 
+  const velocities = [];
 
   for (let i = 0; i < count; i++) {
     const i3 = i * 3;
@@ -90,7 +95,6 @@ function spawnBloodSpray(spawnPos) {
     positions[i3 + 1] = spawnPos.y;
     positions[i3 + 2] = spawnPos.z;
 
-
     velocities[i] = new THREE.Vector3(
       (Math.random() - 0.5) * 2,
       Math.random() * 2 + 1,
@@ -98,14 +102,13 @@ function spawnBloodSpray(spawnPos) {
     );
   }
 
-
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
   const material = new THREE.PointsMaterial({
     color: 0x9f0000,
     size: 0.1,
-    sizeAttenuation: true
+    sizeAttenuation: true,
   });
   const points = new THREE.Points(geometry, material);
   points.userData.velocities = velocities;
@@ -113,7 +116,6 @@ function spawnBloodSpray(spawnPos) {
   scene.add(points);
   bloodSprays.push(points);
 }
-
 
 //// END BLOOD SPRAY
 
@@ -194,9 +196,11 @@ endPlatformVisual.position.copy(endPos);
 endPlatformVisual.receiveShadow = true;
 scene.add(endPlatformVisual);
 
-
 // CHECKPOINT
-checkpointPlatformVisual = new THREE.Mesh(platformGeom.clone(), platformMat.clone());
+checkpointPlatformVisual = new THREE.Mesh(
+  platformGeom.clone(),
+  platformMat.clone()
+);
 checkpointPlatformVisual.position.copy(checkpointPos);
 checkpointPlatformVisual.receiveShadow = true;
 scene.add(checkpointPlatformVisual);
@@ -208,7 +212,10 @@ const checkpointCollisionGeom = new THREE.BoxGeometry(
 );
 checkpointCollisionGeom.translate(0, -panelThickness / 2, 0);
 const checkpointCollisionMat = new THREE.MeshBasicMaterial({ visible: false });
-checkpointPlatformCollision = new THREE.Mesh(checkpointCollisionGeom, checkpointCollisionMat);
+checkpointPlatformCollision = new THREE.Mesh(
+  checkpointCollisionGeom,
+  checkpointCollisionMat
+);
 checkpointPlatformCollision.position.copy(checkpointPos);
 scene.add(checkpointPlatformCollision);
 
@@ -249,8 +256,8 @@ for (let i = 0; i < numStrips; i++) {
 const textureLoader = new THREE.TextureLoader();
 const curtainTexture = textureLoader.load("/assets/curtain.jpg");
 // Checker texture
-const plane1 = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10);  // Clips x > 9
-const plane2 = new THREE.Plane(new THREE.Vector3(1, 0, 0), 10);   // Clips x < -9
+const plane1 = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10); // Clips x > 9
+const plane2 = new THREE.Plane(new THREE.Vector3(1, 0, 0), 10); // Clips x < -9
 const checkerTexture = textureLoader.load("/assets/checker.jpg");
 checkerTexture.wrapS = THREE.RepeatWrapping; // Repeat horizontally
 checkerTexture.wrapT = THREE.RepeatWrapping; // Repeat vertically
@@ -258,18 +265,18 @@ checkerTexture.repeat.set(5, 5); // Adjust the number of repeats (X, Y)
 // Curtain material with texture
 const curtainMaterial = new THREE.MeshBasicMaterial({
   map: curtainTexture,
-  side: THREE.DoubleSide
+  side: THREE.DoubleSide,
 });
 const checkerMaterial = new THREE.MeshBasicMaterial({
   map: checkerTexture,
   side: THREE.DoubleSide,
-  clippingPlanes: [plane1, plane2]
+  clippingPlanes: [plane1, plane2],
 });
 renderer.localClippingEnabled = true;
 const checkerPlane = new THREE.PlaneGeometry(38, 38);
 const checkerMesh = new THREE.Mesh(checkerPlane, checkerMaterial);
 checkerMesh.position.set(0, -3.05, -17);
-checkerMesh.rotation.x = Math.PI/2;
+checkerMesh.rotation.x = Math.PI / 2;
 scene.add(checkerMesh);
 
 // creating horizontal ones connecting the vertical
@@ -293,7 +300,7 @@ for (let i = 0; i < strips.length - 1; i++) {
   //Curtain Mesh
   const curtainPlane = new THREE.PlaneGeometry(distance, 15);
   const curtainMesh = new THREE.Mesh(curtainPlane, curtainMaterial);
-  
+
   const midpoint = new THREE.Vector3()
     .addVectors(top1, top2)
     .multiplyScalar(0.5); // get the midpoint to position the strip
@@ -304,7 +311,7 @@ for (let i = 0; i < strips.length - 1; i++) {
   const angle = Math.atan2(direction.x, direction.z);
   horizontalStrip.rotation.z = -angle;
   horizontalStrip.rotation.x = Math.PI / 2; // rotate so the ends touch each other
-  curtainMesh.rotation.y = Math.PI/2 + angle;
+  curtainMesh.rotation.y = Math.PI / 2 + angle;
 
   scene.add(horizontalStrip);
   scene.add(curtainMesh);
@@ -333,7 +340,7 @@ const loader2 = new GLTFLoader();
 
 let doll;
 const gltfLoader = new GLTFLoader();
-gltfLoader.load('assets/doll.glb', (gltf) => {
+gltfLoader.load("assets/doll.glb", (gltf) => {
   doll = gltf.scene;
   doll.position.copy(endPos);
   doll.position.y += 2;
@@ -350,40 +357,44 @@ gltfLoader.load('assets/doll.glb', (gltf) => {
 
 let player;
 let playerMixer;
+let animations;
+let walkAction;
 let idleAction;
-let jumpAction;
-
-loader2.load("../assets/main.glb", (gltf) => {
+loader2.load("../assets/scene.gltf", (gltf) => {
   player = gltf.scene;
   player.scale.set(1, 1, 1);
+  player.rotation.y = Math.PI;
   // Adjust player's position so the base sits at y = 0
   const box = new THREE.Box3().setFromObject(player);
   const bboxMin = box.min.y; // lowest Y value of the model
   player.position.set(0, -bboxMin, 0);
-  scene.add(player);
-  playerMixer = new THREE.AnimationMixer(player);
-  idleAction = playerMixer.clipAction(gltf.animations[0]);
-  idleAction.setLoop(THREE.LoopRepeat, Infinity);
-  idleAction.play();
-
-  // Load jump animation after player is loaded
-  loader2.load("../assets/jump.glb", (gltf) => {
-    const jumping = gltf.animations[0]; // get jump animation
-    jumpAction = playerMixer.clipAction(jumping);
-    jumpAction.setLoop(THREE.LoopOnce, 1);
-    jumpAction.clampWhenFinished = true;
-    console.log("Jump animation loaded");
-  });
-
-  // Listen for when the jump animation finishes
-  playerMixer.addEventListener("finished", (e) => {
-    if (e.action === jumpAction) {
-      console.log("Jump animation finished, switching to idle");
-      jumpAction.crossFadeTo(idleAction, 0.2, false);
-      idleAction.reset().play();
-      jumpAction.reset();
+  // Enable shadows on all meshes inside the model
+  gltf.scene.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true; // ✅ Player model casts shadows
+      child.receiveShadow = true; // ✅ Player model receives shadows
     }
   });
+  scene.add(player);
+  playerMixer = new THREE.AnimationMixer(player);
+  animations = gltf.animations;
+  // Find the walking animation
+  walkAction = playerMixer.clipAction(
+    animations.find((anim) =>
+      anim.name.toLowerCase().includes("animation.steve.walk")
+    )
+  );
+
+  // Find the idle animation
+  idleAction = playerMixer.clipAction(
+    animations.find((anim) =>
+      anim.name.toLowerCase().includes("animation.steve.idle")
+    )
+  );
+  if (idleAction) {
+    idleAction.setLoop(THREE.LoopRepeat, Infinity);
+    idleAction.play(); // Start in idle
+  }
 });
 
 // PROJECTILES
@@ -447,7 +458,7 @@ function add2Lights(x, y, z) {
 for (let i = 1; i <= panelCount; i++) {
   const zPos = -i * 3;
   if (zPos === checkpointPos.z) {
-    continue; 
+    continue;
   }
   const xOffset = 1.0;
   const safeOnLeft = Math.random() < 0.5;
@@ -556,7 +567,7 @@ const gravity = 9.8;
 let velocityY = 0;
 let previousPosition = new THREE.Vector3();
 let playerVelocity = new THREE.Vector3();
-
+let isMoving = false;
 // Controls
 document.addEventListener("keydown", (event) => {
   switch (event.code) {
@@ -582,13 +593,14 @@ document.addEventListener("keydown", (event) => {
         velocityY = 5;
         console.log("Jump!");
         canJump = false;
-        if (playerMixer && idleAction && jumpAction) {
-          console.log("Switching to jump animation");
-          idleAction.crossFadeTo(jumpAction, 0.2, false);
-          jumpAction.reset().play();
-        }
       }
       break;
+  }
+  // Start walking animation if not already playing
+  if (!isMoving && walkAction) {
+    isMoving = true;
+    if (idleAction) idleAction.fadeOut(0.2); // Smooth transition
+    walkAction.reset().fadeIn(0.2).play();
   }
 });
 
@@ -610,6 +622,12 @@ document.addEventListener("keyup", (event) => {
     case "KeyD":
       moveRight = false;
       break;
+  }
+  // Stop walking animation if all keys are released
+  if (!moveForward && !moveBackward && !moveLeft && !moveRight) {
+    isMoving = false;
+    if (walkAction) walkAction.fadeOut(0.2);
+    if (idleAction) idleAction.reset().fadeIn(0.2).play();
   }
 });
 
@@ -653,8 +671,8 @@ function resetPlayerPosition() {
   if (checkpointUnlocked) {
     // Respawn at checkpoint
     player.position.set(
-      checkpointPos.x, 
-      checkpointPos.y + playerHeight / 2, 
+      checkpointPos.x,
+      checkpointPos.y + playerHeight / 2,
       checkpointPos.z
     );
   } else {
@@ -663,8 +681,7 @@ function resetPlayerPosition() {
   }
   velocityY = 0;
   canJump = true;
-};
-
+}
 
 // Animation loop control
 const clock = new THREE.Clock();
@@ -677,7 +694,10 @@ function animate() {
   */
   if (stopAnimation) return;
   const delta = clock.getDelta();
-  if (playerMixer) playerMixer.update(delta);
+  if (playerMixer) {
+    console.log("Mixer updated");
+    playerMixer.update(delta);
+  }
   requestAnimationFrame(animate);
 
   // movement
@@ -688,12 +708,12 @@ function animate() {
   if (moveRight) player.position.x += moveDistance;
 
   // connect the cam to the player (uncomment to stick camera unto player and not use orbit controls)
-  
+
   camera.position.x = player.position.x;
   camera.position.z = player.position.z + 5;
   camera.position.y = player.position.y + 2.5;
   camera.lookAt(player.position.x, player.position.y + 0.5, player.position.z);
-  
+
   // Gravity
   velocityY -= gravity * delta;
   player.position.y += velocityY * delta;
@@ -718,12 +738,10 @@ function animate() {
       player.position.y = surface.position.y + playerHeight / 2;
       velocityY = 0;
       canJump = true;
-      console.log("Can jump, on surface:", surface);
-
 
       if (surface === endPlatformCollision) {
         checkpointUnlocked = false;
-        checkpointPlatformVisual.material.color.set(0xff6b81)
+        checkpointPlatformVisual.material.color.set(0xff6b81);
         resetPlayerPosition();
       }
 
@@ -745,7 +763,7 @@ function animate() {
       ) {
         currentStepReached = surface.userData.index;
         score++;
-        console.log(Score: ${score});
+        console.log("Score: ${score}");
       }
     }
   }
@@ -824,7 +842,7 @@ function animate() {
     // eyeLight.intensity = isRedLight ? 3 : 0;
   }
   console.log(
-    moving ${moving}, isRedLight ${isRedLight}, rotComplete ${dollRotationComplete}
+    "moving ${moving}, isRedLight ${isRedLight}, rotComplete ${dollRotationComplete}"
   );
 
   // CHECK PLAYER MOVEMENT DURING RED LIGHT
@@ -840,7 +858,7 @@ function animate() {
       lastShotTime = currentTime;
     } else {
       console.log(
-        time not satisfied. ${currentTime}, ${lastShotTime}, ${minFireWait}
+        "time not satisfied. ${currentTime}, ${lastShotTime}, ${minFireWait}"
       );
     }
   }
@@ -849,16 +867,18 @@ function animate() {
   for (let i = bullets.length - 1; i >= 0; i--) {
     bullets[i].position.add(bullets[i].userData.velocity);
     if (bullets[i].position.distanceTo(player.position) < 1) {
-        spawnBloodSpray(player.position);
-        resetPlayerPosition();
-        scene.remove(bullets[i]);
-        bullets.splice(i, 1);
-    } else if (bullets[i].position.y < -5 || bullets[i].position.length() > 100) {
-        scene.remove(bullets[i]);
-        bullets.splice(i, 1);
+      spawnBloodSpray(player.position);
+      resetPlayerPosition();
+      scene.remove(bullets[i]);
+      bullets.splice(i, 1);
+    } else if (
+      bullets[i].position.y < -5 ||
+      bullets[i].position.length() > 100
+    ) {
+      scene.remove(bullets[i]);
+      bullets.splice(i, 1);
     }
   }
-
 
   //// BLOOD SPRAYS
   for (let i = 0; i < bloodSprays.length; i++) {
@@ -883,7 +903,6 @@ function animate() {
     }
     points.geometry.attributes.position.needsUpdate = true;
   }
-
 
   renderer.render(scene, camera);
 }
