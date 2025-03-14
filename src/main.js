@@ -6,7 +6,7 @@ const playerWidth = 0.5;
 const panelCount = 10;
 let endPos = new THREE.Vector3(0, 0, -panelCount * 3 - 4);
 let checkpointUnlocked = false;
-const checkpointPos = new THREE.Vector3(0, 0, -((panelCount / 2) * 3));
+const checkpointPos = new THREE.Vector3(0, 0.2, -((panelCount / 2) * 3));
 let checkpointPlatformVisual, checkpointPlatformCollision;
 
 // SCENE, CAM, RENDER etc
@@ -683,6 +683,53 @@ function resetPlayerPosition() {
   canJump = true;
 }
 
+//// TIMER
+const timerCanvas = document.createElement("canvas");
+timerCanvas.width = 256;
+timerCanvas.height = 128;
+const ctx = timerCanvas.getContext("2d");
+
+// Function to draw the timer digits
+function drawTimerText(time) {
+  ctx.clearRect(0, 0, timerCanvas.width, timerCanvas.height);
+  
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, timerCanvas.width, timerCanvas.height);
+
+  ctx.fillStyle = "red";
+  ctx.font = "bold 80px Arial";
+  ctx.textAlign = "center";
+  const mins = Math.floor(time/60);
+  const secs = time % 60;
+  const optionalZero = secs < 10 ? '0' : '';
+  ctx.fillText(`${mins}:${optionalZero}${secs}`, timerCanvas.width / 2, timerCanvas.height / 1.5);
+}
+
+const timerTexture = new THREE.CanvasTexture(timerCanvas);
+drawTimerText(0);
+
+const timerGeometry = new THREE.PlaneGeometry(3, 1);
+const timerMaterial = new THREE.MeshBasicMaterial({
+  map: timerTexture,
+  transparent: true,
+});
+const timerMesh = new THREE.Mesh(timerGeometry, timerMaterial);
+scene.add(timerMesh);
+
+timerMesh.position.set(endPos.x, endPos.y + 8, endPos.z);
+
+// Timer
+let countdownTime = 0;
+let timerInterval = setInterval(() => {
+  countdownTime++;
+  drawTimerText(countdownTime);
+  timerTexture.needsUpdate = true;
+}, 1000);
+
+
+
+/// TIMER
+
 // Animation loop control
 const clock = new THREE.Clock();
 let stopAnimation = false;
@@ -743,6 +790,7 @@ function animate() {
         checkpointUnlocked = false;
         checkpointPlatformVisual.material.color.set(0xff6b81);
         resetPlayerPosition();
+        clearInterval(timerInterval);
       }
 
       if (surface === checkpointPlatformCollision && !checkpointUnlocked) {
@@ -867,7 +915,9 @@ function animate() {
   for (let i = bullets.length - 1; i >= 0; i--) {
     bullets[i].position.add(bullets[i].userData.velocity);
     if (bullets[i].position.distanceTo(player.position) < 1) {
-      spawnBloodSpray(player.position);
+      let bloodPoint = bullets[i].position.clone();
+      bloodPoint.y += playerHeight / 2;
+      spawnBloodSpray(bloodPoint);
       resetPlayerPosition();
       scene.remove(bullets[i]);
       bullets.splice(i, 1);
