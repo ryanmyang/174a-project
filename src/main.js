@@ -371,8 +371,8 @@ loader2.load("../assets/scene.gltf", (gltf) => {
   // Enable shadows on all meshes inside the model
   gltf.scene.traverse((child) => {
     if (child.isMesh) {
-      child.castShadow = true; // ✅ Player model casts shadows
-      child.receiveShadow = true; // ✅ Player model receives shadows
+      child.castShadow = true;
+      child.receiveShadow = true;
     }
   });
   scene.add(player);
