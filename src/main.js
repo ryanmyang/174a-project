@@ -48,7 +48,7 @@ const spotLight = new THREE.SpotLight(0xffffff, 75, 20, Math.PI / 12, 0.5, 1);
 spotLight.position.set(-10, 15, -25);
 spotLight.target.position.set(0, 0, -25);
 scene.add(spotLight);
-scene.add(spotLight.target); // Ensure target is part of the scene
+scene.add(spotLight.target);
 
 /* spotlight helper
 const spotLightHelper = new THREE.SpotLightHelper(spotLight);
@@ -75,7 +75,7 @@ const spotLight2 = new THREE.SpotLight(0xffffff, 50, 20, Math.PI / 12, 0.5, 1);
 spotLight2.position.set(10, 15, -10);
 spotLight2.target.position.set(0, 0, -10);
 scene.add(spotLight2);
-scene.add(spotLight2.target); // Ensure target is part of the scene
+scene.add(spotLight2.target);
 
 /* spotlight helper
 const spotLight2Helper = new THREE.SpotLightHelper(spotLight2);
@@ -152,7 +152,7 @@ const panelCollisions = [];
 
 // Rails next to panels
 const railWidth = 0.1;
-const railDepth = 32; // total length = 32
+const railDepth = 32;
 const railGeometry = new THREE.BoxGeometry(
   railWidth,
   panelThickness,
@@ -241,13 +241,13 @@ function createStrip(length) {
 const strips = [];
 // creating vertical strips for the ellipse
 for (let i = 0; i < numStrips; i++) {
-  if (i == 0) continue; // removes the first one blocking the player
-  const angle = (i / numStrips) * 2 * Math.PI; // getting the angle to calculate the coordinates
+  if (i == 0) continue; 
+  const angle = (i / numStrips) * 2 * Math.PI;
   const z = majorAxis * Math.cos(angle);
   const x = minorAxis * Math.sin(angle);
 
   const strip = createStrip(stripLength);
-  strip.position.set(x, stripLength / 2 - 3, z - 17); // position properly to form ellipse
+  strip.position.set(x, stripLength / 2 - 3, z - 17);
 
   scene.add(strip);
   strips.push(strip);
@@ -256,12 +256,12 @@ for (let i = 0; i < numStrips; i++) {
 const textureLoader = new THREE.TextureLoader();
 const curtainTexture = textureLoader.load("/assets/curtain.jpg");
 // Checker texture
-const plane1 = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10); // Clips x > 9
-const plane2 = new THREE.Plane(new THREE.Vector3(1, 0, 0), 10); // Clips x < -9
+const plane1 = new THREE.Plane(new THREE.Vector3(-1, 0, 0), 10); 
+const plane2 = new THREE.Plane(new THREE.Vector3(1, 0, 0), 10); 
 const checkerTexture = textureLoader.load("/assets/checker.jpg");
-checkerTexture.wrapS = THREE.RepeatWrapping; // Repeat horizontally
-checkerTexture.wrapT = THREE.RepeatWrapping; // Repeat vertically
-checkerTexture.repeat.set(5, 5); // Adjust the number of repeats (X, Y)
+checkerTexture.wrapS = THREE.RepeatWrapping;
+checkerTexture.wrapT = THREE.RepeatWrapping;
+checkerTexture.repeat.set(5, 5);
 // Curtain material with texture
 const curtainMaterial = new THREE.MeshBasicMaterial({
   map: curtainTexture,
@@ -294,7 +294,7 @@ for (let i = 0; i < strips.length - 1; i++) {
     strip2.position.y + stripLength / 2,
     strip2.position.z
   );
-  const distance = top1.distanceTo(top2); // calculates the distance between the top = length of the strip
+  const distance = top1.distanceTo(top2);
 
   const horizontalStrip = createStrip(distance);
   //Curtain Mesh
@@ -310,7 +310,7 @@ for (let i = 0; i < strips.length - 1; i++) {
   const direction = new THREE.Vector3().subVectors(top2, top1); //Rotate the strip to face from strip1 to strip2
   const angle = Math.atan2(direction.x, direction.z);
   horizontalStrip.rotation.z = -angle;
-  horizontalStrip.rotation.x = Math.PI / 2; // rotate so the ends touch each other
+  horizontalStrip.rotation.x = Math.PI / 2;
   curtainMesh.rotation.y = Math.PI / 2 + angle;
 
   scene.add(horizontalStrip);
@@ -364,9 +364,9 @@ loader2.load("../assets/scene.gltf", (gltf) => {
   player = gltf.scene;
   player.scale.set(1, 1, 1);
   player.rotation.y = Math.PI;
-  // Adjust player's position so the base sits at y = 0
+  // Adjust player position so the base sits at y = 0
   const box = new THREE.Box3().setFromObject(player);
-  const bboxMin = box.min.y; // lowest Y value of the model
+  const bboxMin = box.min.y; 
   player.position.set(0, -bboxMin, 0);
   // Enable shadows on all meshes inside the model
   gltf.scene.traverse((child) => {
@@ -393,7 +393,7 @@ loader2.load("../assets/scene.gltf", (gltf) => {
   );
   if (idleAction) {
     idleAction.setLoop(THREE.LoopRepeat, Infinity);
-    idleAction.play(); // Start in idle
+    idleAction.play();
   }
 });
 
@@ -437,10 +437,10 @@ function add2Lights(x, y, z) {
     // Point Light for Panels
     const pointLight = new THREE.PointLight(0xffff00, 1, 3); // yellow color, intensity, distance
     pointLight.castShadow = false;
-    pointLight.position.set(x, y, z + (3.0 / 2.0) * i); // change z for each light to space out
+    pointLight.position.set(x, y, z + (3.0 / 2.0) * i); 
 
     // Add a sphere (light bulb) to represent the bulb
-    const bulbGeometry = new THREE.SphereGeometry(0.04, 16, 16); // 0.04 radius
+    const bulbGeometry = new THREE.SphereGeometry(0.04, 16, 16);
     const bulbMaterial = new THREE.MeshBasicMaterial({
       emissive: 0xffff00, // Glow color
       emissiveIntensity: 1, // Glow intensity
@@ -473,7 +473,7 @@ for (let i = 1; i <= panelCount; i++) {
   scene.add(leftPanel);
   panels.push(leftPanel);
   const llrailxOffset = -1 - panelWidth / 2 - railWidth / 2;
-  add2Lights(llrailxOffset - 0.1, -0.1, zPos - panelDepth / 2); //x,y,z at the top of panel
+  add2Lights(llrailxOffset - 0.1, -0.1, zPos - panelDepth / 2);
 
   // LEFT COLLISION MESH (bigger, invisible)
   const leftCollisionGeom = new THREE.BoxGeometry(
@@ -502,7 +502,7 @@ for (let i = 1; i <= panelCount; i++) {
   scene.add(rightPanel);
   panels.push(rightPanel);
   const rrrailxOffset = 1 + panelWidth / 2 + railWidth / 2;
-  add2Lights(rrrailxOffset + 0.1, -0.1, zPos - panelDepth / 2); //x,y,z at the top of panel
+  add2Lights(rrrailxOffset + 0.1, -0.1, zPos - panelDepth / 2);
 
   // RIGHT COLLISION MESH
   const rightCollisionGeom = new THREE.BoxGeometry(
@@ -548,7 +548,7 @@ const llRail = new THREE.Mesh(railGeometry, railMat);
 const lrRail = new THREE.Mesh(railGeometry, railMat);
 const rlRail = new THREE.Mesh(railGeometry, railMat);
 const rrRail = new THREE.Mesh(railGeometry, railMat);
-llRail.position.set(llrailxOffset, 0, -16.5); //-16.5 = z position of middle of rail
+llRail.position.set(llrailxOffset, 0, -16.5); //-16.5 = z pos of middle of rail
 lrRail.position.set(lrrailxOffset, 0, -16.5);
 rlRail.position.set(rlrailxOffset, 0, -16.5);
 rrRail.position.set(rrrailxOffset, 0, -16.5);
@@ -599,7 +599,7 @@ document.addEventListener("keydown", (event) => {
   // Start walking animation if not already playing
   if (!isMoving && walkAction) {
     isMoving = true;
-    if (idleAction) idleAction.fadeOut(0.2); // Smooth transition
+    if (idleAction) idleAction.fadeOut(0.2);
     walkAction.reset().fadeIn(0.2).play();
   }
 });
